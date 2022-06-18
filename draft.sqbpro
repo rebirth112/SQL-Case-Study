@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/Users/Jerry Yang/Desktop/Jerry Yang - Bench Accounting - Case Study/ops_analyst_case_shareable.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="2006"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,19:mainaa_capacity_objects"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="aa_capacity_objects" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="149"/><column index="2" value="63"/><column index="3" value="123"/><column index="4" value="64"/><column index="5" value="144"/><column index="6" value="232"/><column index="7" value="132"/><column index="8" value="127"/><column index="9" value="89"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="associates" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort><column index="1" mode="0"/></sort><column_widths><column index="1" value="147"/><column index="2" value="126"/><column index="3" value="79"/><column index="4" value="73"/><column index="5" value="143"/><column index="6" value="134"/><column index="7" value="132"/><column index="8" value="167"/><column index="9" value="127"/><column index="10" value="127"/><column index="11" value="145"/><column index="12" value="111"/><column index="13" value="75"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="client_hold_requests" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="113"/><column index="2" value="97"/><column index="4" value="91"/><column index="5" value="53"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="client_responsiveness_30d" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="124"/><column index="2" value="62"/><column index="3" value="64"/><column index="4" value="115"/><column index="5" value="167"/><column index="6" value="189"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="clientescalations" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="124"/><column index="2" value="89"/><column index="3" value="89"/><column index="4" value="135"/><column index="5" value="67"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="clienthealth_scoring" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="54"/><column index="2" value="77"/><column index="3" value="124"/><column index="4" value="136"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="communications_summary_14d" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="131"/><column index="2" value="54"/><column index="3" value="179"/><column index="4" value="265"/><column index="5" value="177"/><column index="6" value="188"/><column index="7" value="189"/><column index="8" value="174"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="operations_team_history" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="147"/><column index="2" value="126"/><column index="3" value="79"/><column index="4" value="73"/><column index="5" value="143"/><column index="6" value="134"/><column index="7" value="132"/><column index="8" value="167"/><column index="9" value="127"/><column index="10" value="127"/><column index="11" value="145"/><column index="12" value="122"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="Creating Separate Tables">CREATE TABLE IF NOT EXISTS associates AS
+	SELECT * FROM operations_team_history
+	WHERE job_title__c LIKE '%Associate%';
+
+CREATE TABLE IF NOT EXISTS teamleads AS
+	SELECT tm_name, supervisor FROM operations_team_history
+	WHERE job_title__c LIKE '%Team Lead%';
+	
+-- The issue here is that the operations_team_history table isn't separated based on role.--
+-- I am creating two separate tables here, one where job titles are specifically for accounting associates, and another for team leads --
+-- The logic is that the supervisor of the associate will be the team lead, and the supervisor of the team lead will be the operations manager--</sql><sql name="Changing Infinite End Date">UPDATE associates
+SET end_date = '2022-04-13'
+WHERE end_date = '2099-12-31';
+
+--Because the analysis is conducted with the assumption of the end date being 2022-04-13, I change all &quot;infinite&quot; dates to that day--
+--This prevents strange calculations relating to tenure--
+
+</sql><sql name="Ramping">ALTER TABLE associates
+ADD IsRamping varchar (255);
+--creates a table in the new table I created, a field called IsRamping--
+
+UPDATE associates
+SET IsRamping = 'TRUE'
+WHERE ramp_end_date__c &gt; '2022-04-13';
+--If ramp end date is beyond April 13, that means the associate is currently ramping--
+
+UPDATE associates
+SET isRamping = 'FALSE'
+WHERE ramp_end_date__c &lt; '2022-04-13';
+--Self-explanatory - if ramp end date is prior to current date, then ramping has ended--
+
+UPDATE associates
+SET isRamping = 'FALSE'
+WHERE ramp_end_date__c IS NULL
+--same as above, except for null--</sql><sql name="Hold">ALTER TABLE client_hold_requests
+ADD OnHold varchar(255);
+--Modifying client_hold_requests table to include a boolean field to verify whether on hold or not--
+
+UPDATE client_hold_requests
+SET OnHold = 'TRUE'
+WHERE request_type = 'On Hold';
+--Self explanatory--
+
+UPDATE client_hold_requests
+SET OnHold = 'FALSE'
+WHERE OnHold IS NOT 'TRUE';
+--Whatever was not previously updated would be updated as false here--
+</sql><sql name="Associate &amp; Portfolio">SELECT associates.tm_name AS AssociateName, associates.job_title__c AS JobTitle, associates.supervisor AS TeamLead, teamleads.supervisor AS OperationsManager,
+JULIANDAY(end_date) - JULIANDAY(start_date) AS AssociateTenure, IsRamping, client_hold_requests.OnHold AS OnHold, active_points.active_client_count AS ActiveClients,
+SUM(aa_capacity_objects.max_complexity_points_clients__c) AS MaxComplexityPoints, associates.team__c AS TeamName
+FROM associates
+--I renamed all headers to make it more clear. As previously stated, the supervisor for associate is now the team lead, and the team lead's supervisor is the OM--
+
+INNER JOIN teamleads
+ON associates.supervisor = teamleads.tm_name
+LEFT JOIN client_hold_requests
+ON associates.tm_name=client_hold_requests.aa
+--LEFT JOIN is used for most of these because I'm using the operations_team_history as the base table for reference, and some of the other tables do not have matching row numbers--
+
+LEFT JOIN active_points
+ON associates.tm_name = active_points.aa_fullname
+LEFT JOIN aa_capacity_objects
+ON associates.tm_name = aa_capacity_objects.associate_name
+GROUP BY associates.tm_name
+ORDER BY associates.tm_name;
+--Ordered alphabetically by associate name--
+--I can demonstrate trends in teams by changing the group by and order by--
+--GROUP BY associates.team__c--
+--ORDER BY active_points.active_client_count DESC--
+--ORDER BY SUM(aa_capacity_objects.max_complexity_points_clients__c) DESC--
+
+</sql><sql name="Client Response Rate">SELECT aa_fullname, 100 * sum(iif(response_success_24_hour = 'TRUE',1,0))/count(*) AS PercentageTimelyResponse FROM client_responsiveness_30d
+GROUP BY aa_fullname
+ORDER BY aa_fullname;
+--Instead of using a count function, I decided to add 1 every time the response rate was true. Then dividing the count would give float, multiplying 100 would give percentage--</sql><sql name="How Many Contacts Past 14 Days">SELECT COUNT(*) from communications_summary_14d
+WHERE lastcontactdate_at_reportdate_pstpdt &gt; '2022-03-30' AND merstatus_at_reportdate &lt;&gt; 'CATCH_UP'</sql><sql name="Client Communications">SELECT aa_fullname_at_reportdate AS AssociateName, sum(iif(lastcontactdate_at_reportdate_pstpdt &gt; '2022-03-30', 1, 0)) AS TotalContacted,
+sum(iif(lastcontactdate_at_reportdate_pstpdt &gt; '2022-03-30', 1, 0))/ 52154.0 AS PercentageOfAllContact
+FROM communications_summary_14d
+WHERE merstatus_at_reportdate &lt;&gt; 'CATCH_UP'
+GROUP BY aa_fullname_at_reportdate;
+--The formula here is similar to the client response rate tab.--
+--March 30 is used because this is 14 days before April 13--
+--Issue with missing names, which is why first column is empty.--</sql><sql name="Client Escalations">SELECT associate__c AS AssociateName,  COUNT(*) AS NumberOfEscalations, createddate FROM clientescalations
+WHERE isdeleted = 'FALSE' AND createddate &gt; '2022-01-13' AND AssociateName &lt;&gt; ''
+GROUP BY associate__c
+--ORDER BY COUNT(*) DESC;--
+--January 13 because 90 days before April 13--
+</sql><sql name="Associate Churn">SELECT aa_fullname, COUNT(*) AS ChurnNumbers, associates.team__c AS TeamName FROM churn_reasons
+LEFT JOIN associates
+ON associates.tm_name=churn_reasons.aa_fullname
+WHERE churn_date_pstpdt &gt; '2022-01-13' AND aa_fullname &lt;&gt; ''
+GROUP BY aa_fullname
+--GROUP BY associates.team__c--
+ORDER BY ChurnNumbers DESC
+
+--January 13 because 90 days before April 13--
+--I can group by highest/lowest churn numbers per associate or by team if I choose--</sql><sql name="Client Health">SELECT aa_fullname AS AssociateName, AVG(client_health_score) AS AverageCHS, sum(iif(client_health_score = 0, 1, 0)) AS NumberOfZeroScores FROM clienthealth_scoring
+WHERE aa_fullname &lt;&gt; ''
+GROUP BY aa_fullname
+ORDER BY AVG(client_health_score);
+--Query is self-explanatory, I take the average client health score per person, and I add 1 for every zero score--</sql><sql name="Incomplete Tasks">SELECT aa_fullname AS AssociateName, sum(iif(status_type = 'AVAILABLE', 1,0)) AS NumberAvailable, sum(iif(status_type = 'BLOCKED', 1,0)) AS NumberBlocked
+--associates.team__c AS TeamName--
+FROM incomplete_work_tasks
+--lEFT JOIN associates--
+--ON associates.tm_name=incomplete_work_tasks.aa_fullname--
+WHERE aa_fullname &lt;&gt; '' AND (inbox_state = 'KEEP_UP' OR inbox_state = 'CHURN')
+GROUP BY aa_fullname;</sql><current_tab id="4"/></tab_sql></sqlb_project>
